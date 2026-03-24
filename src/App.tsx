@@ -50,6 +50,7 @@ export default function App() {
   const [editData, setEditData] = useState<any>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [activeSnippetId, setActiveSnippetId] = useState<string | null>(null);
+  const [editingSnippetId, setEditingSnippetId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedModel, setSelectedModel] = useState("gemini-3-flash-preview");
   const [showEdgeLabels, setShowEdgeLabels] = useState(true);
@@ -212,6 +213,58 @@ export default function App() {
     };
     setSnippets([newSnippet, ...snippets]);
     setActiveSnippetId(newSnippet.id);
+    setEditingSnippetId(newSnippet.id);
+  };
+
+  const renderHighlightedText = (text: string, snippetId: string) => {
+    if (!selectedNodeId && !selectedEdgeId) return text;
+    
+    let evidences: string[] = [];
+    if (selectedNodeId) {
+      evidences = edges
+        .filter(e => e.snippet_id === snippetId && (
+          (typeof e.source === 'string' ? e.source : (e.source as any).id) === selectedNodeId || 
+          (typeof e.target === 'string' ? e.target : (e.target as any).id) === selectedNodeId
+        ))
+        .map(e => e.evidence);
+    } else if (selectedEdgeId) {
+      evidences = edges
+        .filter(e => e.id === selectedEdgeId && e.snippet_id === snippetId)
+        .map(e => e.evidence);
+    }
+
+    evidences = Array.from(new Set(evidences.filter(e => e && e.trim() !== "")));
+    if (evidences.length === 0) return text;
+
+    let parts = [{ text, isHighlight: false }];
+    
+    evidences.forEach(evidence => {
+      const newParts: { text: string, isHighlight: boolean }[] = [];
+      parts.forEach(part => {
+        if (part.isHighlight) {
+          newParts.push(part);
+        } else {
+          const splitTexts = part.text.split(evidence);
+          splitTexts.forEach((st, idx) => {
+            newParts.push({ text: st, isHighlight: false });
+            if (idx < splitTexts.length - 1) {
+              newParts.push({ text: evidence, isHighlight: true });
+            }
+          });
+        }
+      });
+      parts = newParts;
+    });
+
+    return (
+      <>
+        {parts.map((part, i) => 
+          part.isHighlight ? 
+            <mark key={i} className="bg-yellow-200 text-yellow-900 rounded-sm px-1 shadow-sm font-medium transition-colors">{part.text}</mark> : 
+            <span key={i}>{part.text}</span>
+        )}
+      </>
+    );
   };
 
   const updateSnippetText = (id: string, text: string) => {
@@ -453,13 +506,29 @@ export default function App() {
                   <Trash2 size={14} />
                 </button>
               </div>
-              <textarea
-                className="w-full bg-transparent resize-none focus:outline-none text-sm leading-relaxed"
-                rows={4}
-                value={snippet.text}
-                onChange={(e) => updateSnippetText(snippet.id, e.target.value)}
-                placeholder="Write your thoughts here..."
-              />
+              {editingSnippetId === snippet.id ? (
+                <textarea
+                  autoFocus
+                  className="w-full bg-transparent resize-none focus:outline-none text-sm leading-relaxed"
+                  rows={Math.max(4, snippet.text.split('\n').length)}
+                  value={snippet.text}
+                  onChange={(e) => updateSnippetText(snippet.id, e.target.value)}
+                  onBlur={() => setEditingSnippetId(null)}
+                  placeholder="Write your thoughts here..."
+                />
+              ) : (
+                <div 
+                  className="w-full text-sm leading-relaxed min-h-[5rem] cursor-text whitespace-pre-wrap"
+                  onClick={(e) => { e.stopPropagation(); setEditingSnippetId(snippet.id); }}
+                  title="Click to edit text"
+                >
+                  {snippet.text === "" ? (
+                    <span className="opacity-40 italic">Write your thoughts here...</span>
+                  ) : (
+                    renderHighlightedText(snippet.text, snippet.id)
+                  )}
+                </div>
+              )}
               <div className="flex flex-wrap gap-1">
                 {nodes.filter(n => n.snippet_ids.includes(snippet.id)).map(n => (
                   <span
@@ -694,9 +763,9 @@ export default function App() {
           linkLabel={link => showEdgeLabels ? (link as Edge).relation : ""}
           linkWidth={1.5}
           linkColor={() => "rgba(20, 20, 20, 0.2)"}
-          onNodeClick={(node) => { setSelectedNodeId((node as Node).id); setSelectedEdgeId(null); setIsEditing(false); }}
-          onLinkClick={(link) => { setSelectedEdgeId((link as Edge).id); setSelectedNodeId(null); setIsEditing(false); }}
-          onBackgroundClick={() => { setSelectedNodeId(null); setSelectedEdgeId(null); setIsEditing(false); }}
+          onNodeClick={(node) => { setSelectedNodeId((node as Node).id); setSelectedEdgeId(null); setIsEditing(false); setEditingSnippetId(null); }}
+          onLinkClick={(link) => { setSelectedEdgeId((link as Edge).id); setSelectedNodeId(null); setIsEditing(false); setEditingSnippetId(null); }}
+          onBackgroundClick={() => { setSelectedNodeId(null); setSelectedEdgeId(null); setIsEditing(false); setEditingSnippetId(null); }}
           nodeCanvasObject={(node: any, ctx, globalScale) => {
             const label = node.label;
             const fontSize = 12 / globalScale;
