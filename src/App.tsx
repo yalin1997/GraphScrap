@@ -6,13 +6,13 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { GoogleGenAI, Type } from "@google/genai";
-import { 
-  Plus, 
-  Trash2, 
-  RefreshCw, 
-  Search, 
-  Database, 
-  ChevronRight, 
+import {
+  Plus,
+  Trash2,
+  RefreshCw,
+  Search,
+  Database,
+  ChevronRight,
   ChevronDown,
   Info,
   Edit3,
@@ -47,7 +47,7 @@ export default function App() {
   const [activeSnippetId, setActiveSnippetId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedModel, setSelectedModel] = useState("gemini-3-flash-preview");
-  
+
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<any>();
@@ -128,7 +128,7 @@ export default function App() {
       });
 
       const result = JSON.parse(response.text || "{}");
-      
+
       // Update Snippet to not be dirty
       setSnippets(prev => prev.map(s => s.id === snippet.id ? { ...s, isDirty: false } : s));
 
@@ -144,26 +144,26 @@ export default function App() {
   const updateGraphState = (snippetId: string, newNodes: any[], newEdges: any[]) => {
     setNodes(prev => {
       const nodeMap = new Map<string, Node>(prev.map(n => [n.id, n]));
-      
+
       newNodes.forEach(nn => {
         const existing = nodeMap.get(nn.id);
         if (existing) {
           if (!existing.snippet_ids.includes(snippetId)) {
-            nodeMap.set(nn.id, { 
-              ...existing, 
-              snippet_ids: [...existing.snippet_ids, snippetId] 
+            nodeMap.set(nn.id, {
+              ...existing,
+              snippet_ids: [...existing.snippet_ids, snippetId]
             });
           }
         } else {
-          nodeMap.set(nn.id, { 
+          nodeMap.set(nn.id, {
             id: nn.id,
             label: nn.label,
             type: nn.type as NodeType,
-            snippet_ids: [snippetId] 
+            snippet_ids: [snippetId]
           });
         }
       });
-      
+
       return Array.from(nodeMap.values());
     });
 
@@ -187,7 +187,7 @@ export default function App() {
         activeNodeIds.add(typeof e.source === 'string' ? e.source : (e.source as any).id);
         activeNodeIds.add(typeof e.target === 'string' ? e.target : (e.target as any).id);
       });
-      
+
       return prevNodes.filter(n => activeNodeIds.has(n.id) || n.snippet_ids.length > 0);
     });
   }, [edges]);
@@ -227,12 +227,12 @@ export default function App() {
     const currentSnippets = snippetsRef.current;
     const currentNodes = overrideNodes || nodesRef.current;
     const currentEdges = overrideEdges || edgesRef.current;
-    
+
     const snippet = currentSnippets.find(s => s.id === snippetId);
     if (!snippet) return;
 
     const snippetEdges = currentEdges.filter(e => e.snippet_id === snippetId);
-    
+
     setIsExtracting(true);
     try {
       const nodeLabels = currentNodes.reduce((acc, n) => {
@@ -295,34 +295,34 @@ export default function App() {
 
   const handleSaveNode = async () => {
     if (!selectedNodeId || !editData) return;
-    
+
     const node = nodes.find(n => n.id === selectedNodeId);
     if (!node) return;
 
     const affectedSnippetIds = node.snippet_ids;
     const updatedNodes = nodes.map(n => n.id === selectedNodeId ? { ...n, ...editData } : n);
-    
+
     setNodes(updatedNodes);
     setIsEditing(false);
-    
+
     // Mark affected snippets as dirty
-    setSnippets(prev => prev.map(s => 
+    setSnippets(prev => prev.map(s =>
       affectedSnippetIds.includes(s.id) ? { ...s, isDirty: true } : s
     ));
   };
 
   const handleSaveEdge = async () => {
     if (!selectedEdgeId || !editData) return;
-    
+
     const edge = edges.find(e => e.id === selectedEdgeId);
     if (!edge) return;
-    
+
     const updatedEdges = edges.map(e => e.id === selectedEdgeId ? { ...e, ...editData } : e);
     setEdges(updatedEdges);
     setIsEditing(false);
-    
+
     // Mark the specific snippet as dirty
-    setSnippets(prev => prev.map(s => 
+    setSnippets(prev => prev.map(s =>
       s.id === edge.snippet_id ? { ...s, isDirty: true } : s
     ));
   };
@@ -339,7 +339,7 @@ export default function App() {
 
   // --- Render Helpers ---
 
-  const filteredSnippets = snippets.filter(s => 
+  const filteredSnippets = snippets.filter(s =>
     s.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (selectedNodeId && nodes.find(n => n.id === selectedNodeId)?.snippet_ids.includes(s.id))
   );
@@ -355,16 +355,16 @@ export default function App() {
       <div className="w-[450px] flex flex-col border-r border-[#141414] bg-white/50 backdrop-blur-sm">
         <div className="p-6 border-bottom border-[#141414] flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-serif italic font-bold tracking-tight">Nodescape</h1>
+            <h1 className="text-2xl font-serif italic font-bold tracking-tight">GraphScape</h1>
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={loadSeedData}
                 className="p-2 hover:bg-[#141414] hover:text-white transition-colors rounded-full border border-[#141414]"
                 title="Load Seed Data"
               >
                 <Database size={18} />
               </button>
-              <button 
+              <button
                 onClick={addSnippet}
                 className="p-2 bg-[#141414] text-white hover:bg-opacity-80 transition-colors rounded-full"
                 title="Add Snippet"
@@ -373,18 +373,18 @@ export default function App() {
               </button>
             </div>
           </div>
-          
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30" size={16} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search snippets or nodes..."
               className="w-full pl-10 pr-4 py-2 bg-transparent border border-[#141414] rounded-md focus:outline-none focus:ring-1 focus:ring-[#141414]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          
+
           <div className="flex items-center justify-between gap-3 mt-1">
             <span className="text-[10px] font-mono uppercase tracking-widest opacity-60">AI Model</span>
             <select
@@ -405,7 +405,7 @@ export default function App() {
             </div>
           )}
           {filteredSnippets.map((snippet) => (
-            <div 
+            <div
               key={snippet.id}
               className={cn(
                 "group p-4 border rounded-lg transition-all duration-200",
@@ -419,14 +419,14 @@ export default function App() {
                   {new Date(snippet.timestamp).toLocaleTimeString()}
                 </span>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); extractGraph(snippet); }}
                     className="p-1 hover:text-blue-600"
                     title="Extract Graph"
                   >
                     <RefreshCw size={14} className={isExtracting ? "animate-spin" : ""} />
                   </button>
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); syncGraphToText(snippet.id); }}
                     className={cn(
                       "p-1 transition-colors",
@@ -436,7 +436,7 @@ export default function App() {
                   >
                     <Zap size={14} fill={snippet.isDirty ? "currentColor" : "none"} />
                   </button>
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); deleteSnippet(snippet.id); }}
                     className="p-1 hover:text-red-600"
                     title="Delete"
@@ -445,7 +445,7 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              <textarea 
+              <textarea
                 className="w-full bg-transparent resize-none focus:outline-none text-sm leading-relaxed"
                 rows={4}
                 value={snippet.text}
@@ -454,8 +454,8 @@ export default function App() {
               />
               <div className="mt-2 flex flex-wrap gap-1">
                 {nodes.filter(n => n.snippet_ids.includes(snippet.id)).map(n => (
-                  <span 
-                    key={n.id} 
+                  <span
+                    key={n.id}
                     className="px-2 py-0.5 text-[9px] font-mono border border-[#141414] rounded-full bg-white"
                     style={{ borderColor: NODE_COLORS[n.type] }}
                   >
@@ -491,19 +491,19 @@ export default function App() {
               ))}
             </div>
           </div>
-          
+
           {selectedNodeId && (
             <div className="bg-white border border-[#141414] p-4 rounded-lg shadow-xl animate-in fade-in slide-in-from-left-4 duration-300 w-64">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   {isEditing ? (
                     <div className="space-y-2">
-                      <input 
+                      <input
                         className="w-full text-lg font-serif italic border-b border-[#141414] focus:outline-none"
                         value={editData.label}
                         onChange={e => setEditData({ ...editData, label: e.target.value })}
                       />
-                      <select 
+                      <select
                         className="w-full text-[10px] font-mono uppercase bg-transparent border border-[#141414] rounded p-1"
                         value={editData.type}
                         onChange={e => setEditData({ ...editData, type: e.target.value })}
@@ -539,7 +539,7 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 <div>
                   <h4 className="text-[9px] font-mono uppercase tracking-widest opacity-40 mb-1">Connections</h4>
@@ -563,7 +563,7 @@ export default function App() {
                     })}
                   </div>
                 </div>
-                
+
                 {!isEditing && (
                   <div>
                     <h4 className="text-[9px] font-mono uppercase tracking-widest opacity-40 mb-1">Evidence</h4>
@@ -588,7 +588,7 @@ export default function App() {
                 <div className="flex-1">
                   <h3 className="text-[10px] font-mono uppercase tracking-widest opacity-40 mb-1">Edge Details</h3>
                   {isEditing ? (
-                    <input 
+                    <input
                       className="w-full text-lg font-serif italic border-b border-[#141414] focus:outline-none"
                       value={editData.relation}
                       onChange={e => setEditData({ ...editData, relation: e.target.value })}
@@ -616,7 +616,7 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 <div>
                   <h4 className="text-[9px] font-mono uppercase tracking-widest opacity-40 mb-1">Evidence</h4>
@@ -625,7 +625,7 @@ export default function App() {
                   </p>
                 </div>
                 <div className="pt-2 border-t border-[#141414]/10">
-                  <button 
+                  <button
                     onClick={() => {
                       const edge = edges.find(e => e.id === selectedEdgeId);
                       if (edge) setActiveSnippetId(edge.snippet_id);
@@ -677,7 +677,7 @@ export default function App() {
             ctx.arc(node.x, node.y, 4, 0, 2 * Math.PI, false);
             ctx.fillStyle = NODE_COLORS[node.type as NodeType] || "#141414";
             ctx.fill();
-            
+
             if (selectedNodeId === node.id) {
               ctx.strokeStyle = '#141414';
               ctx.lineWidth = 2 / globalScale;
@@ -694,7 +694,8 @@ export default function App() {
         )}
       </div>
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
