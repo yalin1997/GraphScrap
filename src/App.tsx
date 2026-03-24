@@ -285,12 +285,27 @@ export default function App() {
     const seedSnippets: Snippet[] = [
       {
         id: "snip_1",
-        text: "Steve Jobs co-founded Apple in Cupertino. He later introduced the iPhone in 2007, which revolutionized the smartphone industry.",
-        timestamp: Date.now() - 10000
+        text: "Steve Jobs co-founded Apple in Cupertino alongside Steve Wozniak. Years later, he introduced the iPhone in 2007, which revolutionized the smartphone industry.",
+        timestamp: Date.now() - 25000
       },
       {
         id: "snip_2",
-        text: "Tim Cook succeeded Steve Jobs as CEO of Apple. Under his leadership, Apple launched the Apple Watch and expanded its services business.",
+        text: "Tim Cook succeeded Steve Jobs as CEO of Apple. Under his leadership, Apple launched the Apple Watch and significantly expanded its services business.",
+        timestamp: Date.now() - 20000
+      },
+      {
+        id: "snip_3",
+        text: "Before returning to Apple, Steve Jobs founded NeXT. Apple acquired NeXT in 1997, which brought Jobs back to the company he originally started.",
+        timestamp: Date.now() - 15000
+      },
+      {
+        id: "snip_4",
+        text: "Jony Ive was the Chief Design Officer at Apple, working closely with Steve Jobs to design iconic products like the iMac and the iPhone.",
+        timestamp: Date.now() - 10000
+      },
+      {
+        id: "snip_5",
+        text: "During the 1990s, Microsoft, led by Bill Gates, invested in Apple to help save the struggling Cupertino company from bankruptcy.",
         timestamp: Date.now() - 5000
       }
     ];
