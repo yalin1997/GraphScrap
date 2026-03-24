@@ -46,6 +46,7 @@ export default function App() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [activeSnippetId, setActiveSnippetId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedModel, setSelectedModel] = useState("gemini-3-flash-preview");
   
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -83,7 +84,7 @@ export default function App() {
     setIsExtracting(true);
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: selectedModel,
         contents: `Extract a knowledge graph from the following text. 
         Return ONLY a JSON object with "nodes" and "edges".
         Nodes must have: id (lowercase_underscore), label (display name), type (one of: Person, Organization, Location, Tech, Concept, Product, Event).
@@ -240,7 +241,7 @@ export default function App() {
       }, {} as Record<string, string>);
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: selectedModel,
         contents: `Rewrite the following text to accurately reflect the relationships and entity names defined in the provided data. 
         Maintain the original tone and style.
         
@@ -382,6 +383,18 @@ export default function App() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+          
+          <div className="flex items-center justify-between gap-3 mt-1">
+            <span className="text-[10px] font-mono uppercase tracking-widest opacity-60">AI Model</span>
+            <select
+              className="flex-1 bg-transparent border border-[#141414] rounded-md px-2 py-1.5 text-xs font-serif italic cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#141414]"
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+            >
+              <option value="gemini-3-flash-preview">Gemini 3 Flash (Original)</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            </select>
           </div>
         </div>
 
