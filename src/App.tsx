@@ -17,7 +17,12 @@ import {
   Info,
   Edit3,
   Link as LinkIcon,
-  Zap
+  Zap,
+  Sparkles,
+  PenLine,
+  Eye,
+  EyeOff,
+  X
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Node, Edge, Snippet, GraphData, NodeType } from './types';
@@ -47,6 +52,7 @@ export default function App() {
   const [activeSnippetId, setActiveSnippetId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedModel, setSelectedModel] = useState("gemini-3-flash-preview");
+  const [showEdgeLabels, setShowEdgeLabels] = useState(true);
 
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -359,17 +365,17 @@ export default function App() {
             <div className="flex gap-2">
               <button
                 onClick={loadSeedData}
-                className="p-2 hover:bg-[#141414] hover:text-white transition-colors rounded-full border border-[#141414]"
-                title="Load Seed Data"
+                className="px-3 py-1.5 flex items-center gap-1.5 text-xs font-mono uppercase bg-white hover:bg-[#141414] hover:text-white transition-colors rounded-md border border-[#141414]"
+                title="Load Demo Data"
               >
-                <Database size={18} />
+                <Database size={14} /> Demo
               </button>
               <button
                 onClick={addSnippet}
-                className="p-2 bg-[#141414] text-white hover:bg-opacity-80 transition-colors rounded-full"
-                title="Add Snippet"
+                className="px-3 py-1.5 flex items-center gap-1.5 text-xs font-mono uppercase bg-[#141414] text-white hover:bg-opacity-80 transition-colors rounded-md"
+                title="Add New Note"
               >
-                <Plus size={18} />
+                <Plus size={14} /> New
               </button>
             </div>
           </div>
@@ -408,42 +414,29 @@ export default function App() {
             <div
               key={snippet.id}
               className={cn(
-                "group p-4 border rounded-lg transition-all duration-200",
-                activeSnippetId === snippet.id ? "bg-white shadow-lg border-[#141414]" : "bg-white/30 hover:bg-white/60 border-[#141414]",
-                snippet.isDirty && "border-yellow-500 border-2 ring-2 ring-yellow-200"
+                "group p-4 border rounded-lg transition-all duration-200 flex flex-col gap-3",
+                activeSnippetId === snippet.id ? "bg-white shadow-lg border-[#141414]" : "bg-white/30 hover:bg-white/60 border-[#141414]"
               )}
               onClick={() => setActiveSnippetId(snippet.id)}
             >
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-[10px] font-mono uppercase tracking-widest opacity-50">
-                  {new Date(snippet.timestamp).toLocaleTimeString()}
-                </span>
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); extractGraph(snippet); }}
-                    className="p-1 hover:text-blue-600"
-                    title="Extract Graph"
-                  >
-                    <RefreshCw size={14} className={isExtracting ? "animate-spin" : ""} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); syncGraphToText(snippet.id); }}
-                    className={cn(
-                      "p-1 transition-colors",
-                      snippet.isDirty ? "text-yellow-600 animate-bounce" : "hover:text-green-600"
-                    )}
-                    title={snippet.isDirty ? "Sync required (Graph changed)" : "Sync Graph to Text"}
-                  >
-                    <Zap size={14} fill={snippet.isDirty ? "currentColor" : "none"} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteSnippet(snippet.id); }}
-                    className="p-1 hover:text-red-600"
-                    title="Delete"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-widest opacity-50">
+                    {new Date(snippet.timestamp).toLocaleTimeString()}
+                  </span>
+                  {snippet.isDirty && (
+                    <span className="text-[9px] font-mono uppercase bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded border border-yellow-400">
+                      Needs Sync
+                    </span>
+                  )}
                 </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteSnippet(snippet.id); }}
+                  className="p-1 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Delete Note"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
               <textarea
                 className="w-full bg-transparent resize-none focus:outline-none text-sm leading-relaxed"
@@ -452,7 +445,7 @@ export default function App() {
                 onChange={(e) => updateSnippetText(snippet.id, e.target.value)}
                 placeholder="Write your thoughts here..."
               />
-              <div className="mt-2 flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1">
                 {nodes.filter(n => n.snippet_ids.includes(snippet.id)).map(n => (
                   <span
                     key={n.id}
@@ -462,6 +455,30 @@ export default function App() {
                     {n.label}
                   </span>
                 ))}
+              </div>
+              <div className="flex gap-2 pt-2 border-t border-[#141414]/10 mt-auto">
+                <button
+                  onClick={(e) => { e.stopPropagation(); extractGraph(snippet); }}
+                  disabled={isExtracting}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 bg-white border border-[#141414] rounded-md text-[10px] font-mono uppercase hover:bg-blue-50 hover:text-blue-700 transition-colors disabled:opacity-50"
+                  title="Extract Graph"
+                >
+                  <Sparkles size={12} className={isExtracting && activeSnippetId === snippet.id ? "animate-pulse text-blue-500" : ""} /> 
+                  <span className="font-bold">Extract</span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); syncGraphToText(snippet.id); }}
+                  disabled={isExtracting}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 border rounded-md text-[10px] font-mono uppercase transition-colors disabled:opacity-50",
+                    snippet.isDirty 
+                      ? "bg-yellow-50 hover:bg-yellow-100 text-yellow-900 border-yellow-400 font-bold" 
+                      : "bg-white hover:bg-green-50 hover:text-green-700 border-[#141414] font-bold"
+                  )}
+                  title="Rewrite Text from Graph"
+                >
+                  <PenLine size={12} /> Rewrite
+                </button>
               </div>
             </div>
           ))}
@@ -490,6 +507,14 @@ export default function App() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div 
+            className="bg-white/80 backdrop-blur-md border border-[#141414] p-3 rounded-lg shadow-sm max-w-xs flex items-center justify-between cursor-pointer hover:bg-white transition-colors gap-6"
+            onClick={() => setShowEdgeLabels(!showEdgeLabels)}
+          >
+            <span className="text-[10px] font-mono uppercase tracking-widest opacity-80">Show Relations</span>
+            {showEdgeLabels ? <Eye size={14} /> : <EyeOff size={14} className="opacity-50" />}
           </div>
 
           {selectedNodeId && (
@@ -534,8 +559,8 @@ export default function App() {
                       <Edit3 size={16} />
                     </button>
                   )}
-                  <button onClick={() => { setSelectedNodeId(null); setIsEditing(false); }} className="p-1 opacity-30 hover:opacity-100">
-                    <Plus className="rotate-45" size={16} />
+                  <button onClick={() => { setSelectedNodeId(null); setIsEditing(false); }} title="Close" className="p-1 opacity-40 hover:opacity-100 bg-gray-100 hover:bg-gray-200 rounded transition-colors text-black">
+                    <X size={16} />
                   </button>
                 </div>
               </div>
@@ -611,8 +636,8 @@ export default function App() {
                       <Edit3 size={16} />
                     </button>
                   )}
-                  <button onClick={() => { setSelectedEdgeId(null); setIsEditing(false); }} className="p-1 opacity-30 hover:opacity-100">
-                    <Plus className="rotate-45" size={16} />
+                  <button onClick={() => { setSelectedEdgeId(null); setIsEditing(false); }} title="Close" className="p-1 opacity-40 hover:opacity-100 bg-gray-100 hover:bg-gray-200 rounded transition-colors text-black">
+                    <X size={16} />
                   </button>
                 </div>
               </div>
@@ -651,7 +676,7 @@ export default function App() {
           linkDirectionalArrowLength={3}
           linkDirectionalArrowRelPos={1}
           linkCurvature={0.25}
-          linkLabel={link => (link as Edge).relation}
+          linkLabel={link => showEdgeLabels ? (link as Edge).relation : ""}
           linkWidth={1.5}
           linkColor={() => "rgba(20, 20, 20, 0.2)"}
           onNodeClick={(node) => { setSelectedNodeId((node as Node).id); setSelectedEdgeId(null); setIsEditing(false); }}
