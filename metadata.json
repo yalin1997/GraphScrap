@@ -1,0 +1,5 @@
+{
+  "name": "Nodescape",
+  "description": "Interactive knowledge management tool that converts text notes into a knowledge graph using LLMs.",
+  "requestFramePermissions": []
+}
