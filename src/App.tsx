@@ -96,8 +96,12 @@ export default function App() {
       // Update Snippet to not be dirty
       setSnippets(prev => prev.map(s => s.id === snippet.id ? { ...s, isDirty: false } : s));
 
-      // Update Graph State
-      updateGraphState(snippet.id, result.nodes, result.edges);
+      // Update Graph State safely
+      if (result.nodes && result.edges) {
+        updateGraphState(snippet.id, result.nodes, result.edges);
+      } else {
+        console.error("Extraction returned invalid format:", result);
+      }
     } catch (error) {
       console.error("Extraction failed:", error);
     } finally {

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from . import database, models, schemas
 
 app = FastAPI()
@@ -28,6 +29,31 @@ def toggle_node_active(node_id: str, active: bool, db: Session = Depends(databas
         node.status = "active" if active else "inactive"
         db.commit()
     return {"status": "success", "node_id": node_id}
+
+class ExtractRequest(BaseModel):
+    text: str
+
+@app.post("/api/extract")
+def extract_graph(req: ExtractRequest):
+    try:
+        client = genai.Client()
+        prompt = f"""Extract a knowledge graph from the following text into JSON format.
+        Return ONLY a JSON object with "nodes" and "edges" lists.
+        Nodes must have: id (lowercase word), label (display name), type (one of: Evidence, Hypothesis, DiagnosticAction).
+        Edges must have: source (node id), target (node id), relation (Support, Check, Find), evidence (the exact sentence).
+        
+        Text: "{req.text}"
+        """
+        response = client.models.generate_content(
+            model="gemini-3.0-flash",
+            contents=prompt,
+            config={"response_mime_type": "application/json"}
+        )
+        import json
+        result = json.loads(response.text)
+        return result
+    except Exception as e:
+        return {"error": str(e), "nodes": [], "edges": []}
 
 from .inference import run_hard_filtering
 import os
