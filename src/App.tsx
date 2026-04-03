@@ -31,13 +31,9 @@ import { Node, Edge, Snippet, GraphData, NodeType } from './types';
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 const NODE_COLORS: Record<NodeType, string> = {
-  Person: "#F87171",
-  Organization: "#60A5FA",
-  Location: "#34D399",
-  Tech: "#FBBF24",
-  Concept: "#A78BFA",
-  Product: "#F472B6",
-  Event: "#94A3B8",
+  Evidence: "#34D399",
+  Hypothesis: "#FBBF24",
+  DiagnosticAction: "#F87171",
 };
 
 export default function App() {
@@ -90,51 +86,12 @@ export default function App() {
   const extractGraph = async (snippet: Snippet) => {
     setIsExtracting(true);
     try {
-      const response = await ai.models.generateContent({
-        model: selectedModel,
-        contents: `Extract a knowledge graph from the following text. 
-        Return ONLY a JSON object with "nodes" and "edges".
-        Nodes must have: id (lowercase_underscore), label (display name), type (one of: Person, Organization, Location, Tech, Concept, Product, Event).
-        Edges must have: source (node id), target (node id), relation (short label), evidence (the exact sentence from the text).
-        
-        Text: "${snippet.text}"`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              nodes: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    id: { type: Type.STRING },
-                    label: { type: Type.STRING },
-                    type: { type: Type.STRING },
-                  },
-                  required: ["id", "label", "type"],
-                },
-              },
-              edges: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    source: { type: Type.STRING },
-                    target: { type: Type.STRING },
-                    relation: { type: Type.STRING },
-                    evidence: { type: Type.STRING },
-                  },
-                  required: ["source", "target", "relation", "evidence"],
-                },
-              },
-            },
-            required: ["nodes", "edges"],
-          },
-        },
+      const res = await fetch("http://localhost:8000/api/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: snippet.text })
       });
-
-      const result = JSON.parse(response.text || "{}");
+      const result = await res.json();
 
       // Update Snippet to not be dirty
       setSnippets(prev => prev.map(s => s.id === snippet.id ? { ...s, isDirty: false } : s));
@@ -685,6 +642,41 @@ export default function App() {
                         <p key={e.id} className="border-l border-[#141414]/20 pl-2">"{e.evidence}"</p>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {nodes.find(n => n.id === selectedNodeId)?.type === "Evidence" && (
+                  <div className="pt-3 pb-1 border-t border-[#141414]/10 mt-3">
+                     <button 
+                       onClick={async () => {
+                          const API_URL = "http://localhost:8000/nodes/toggle_active";
+                          const node = nodes.find(n => n.id === selectedNodeId);
+                          const nextState = node?.status === "active" ? false : true;
+                          
+                          await fetch(`${API_URL}?node_id=${selectedNodeId}&active=${nextState}`, { method: "POST" });
+                          setNodes(prev => prev.map(n => n.id === selectedNodeId ? { ...n, status: nextState ? "active" : "inactive" } : n));
+                          
+                          // Trigger the 2-stage inference
+                          const activeNodeIds = nodes.filter(n => n.id !== selectedNodeId && n.status === "active").map(n => n.id);
+                          if (nextState) activeNodeIds.push(selectedNodeId);
+                          
+                          const result = await fetch("http://localhost:8000/infer", {
+                             method: "POST",
+                             headers: { "Content-Type": "application/json" },
+                             body: JSON.stringify({ active_node_ids: activeNodeIds })
+                          });
+                          const inferenceData = await result.json();
+                          console.log("Inference Result:", inferenceData);
+                          alert(`Inference complete! Evaluated ${inferenceData.candidates_evaluated} candidates.\n\nAI Conclusion:\n` + inferenceData.result);
+                       }}
+                       className={`w-full text-xs font-mono py-1.5 px-2 border rounded-md transition-colors ${
+                         nodes.find(n => n.id === selectedNodeId)?.status === "active" 
+                           ? "bg-emerald-100 text-emerald-800 border-emerald-400" 
+                           : "bg-white text-gray-700 border-gray-400 hover:bg-gray-50"
+                       }`}
+                     >
+                       {nodes.find(n => n.id === selectedNodeId)?.status === "active" ? "★ Evidence Active" : "Set as Active Evidence"}
+                     </button>
                   </div>
                 )}
               </div>
